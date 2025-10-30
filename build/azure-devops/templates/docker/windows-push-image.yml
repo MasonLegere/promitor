@@ -1,0 +1,15 @@
+parameters:
+  - name: imageName
+    type: string
+  - name: tags
+    type: string
+    default: ''
+
+steps:
+  - task: Docker@1
+    displayName: 'Push ${{ parameters.imageName }} image (windows)'
+    inputs:
+      containerregistrytype: 'Container Registry'
+      dockerRegistryEndpoint: 'Docker Hub'
+      command: 'Push an image'
+      imageName: '${{ parameters.imageName }}'

@@ -1,0 +1,27 @@
+parameters:
+  - name: imageName
+    type: string
+  - name: dockerFile
+    type: string
+  - name: buildArgs
+    type: string
+    default: ''
+  - name: tags
+    type: string
+    default: '--tag promitor-agent-scraper-ci'
+  - name: buildContext
+    type: string
+    default: './src/'
+
+steps:
+  - task: Docker@1
+    displayName: 'Build ${{ parameters.imageName }} image (windows)'
+    inputs:
+      containerregistrytype: 'Container Registry'
+      dockerRegistryEndpoint: 'Docker Hub'
+      dockerFile: ${{ parameters.dockerFile }}
+      arguments: '${{ parameters.tags }} --build-arg ${{ parameters.buildArgs }} --no-cache'
+      useDefaultContext: false
+      buildContext: ${{ parameters.buildContext }}
+      imageName: '${{ parameters.imageName }}'
+      addDefaultLabels: false
