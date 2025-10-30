@@ -250,7 +250,7 @@ stages:
             displayName: 'Create GitHub Pre-Release'
             inputs:
               gitHubConnection: 'Tom Kerkhove (GitHub - OAuth)'
-              repositoryName: tomkerkhove/promitor
+              repositoryName: masonlegere/promitor
               action: Create
               tagSource: manual
               tag: '$(Release.TagName)'
