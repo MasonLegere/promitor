@@ -121,9 +121,15 @@ stages:
         - template: templates/docker/linux-push-image.yml
           parameters:
               imageName: '$(Image.TaggedName)'
+              dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
+              tags: '--tag promitor-agent-resource-discovery-ci --tag $(Image.TaggedName.OSAgnostic)'
+              buildArgs: 'VERSION="$(App.Version)"'
         - template: templates/docker/linux-push-image.yml
           parameters:
               imageName: '$(Image.TaggedName.OSAgnostic)'
+              dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
+              tags: '--tag promitor-agent-resource-discovery-ci --tag $(Image.TaggedName.OSAgnostic)'
+              buildArgs: 'VERSION="$(App.Version)"'
   #  - job: DockerBuildWindows
   #    displayName: Build Docker Image (Windows)
   #    condition: succeeded()
