@@ -48,7 +48,7 @@ stages:
   displayName: Docker Image
   dependsOn: [Init]
   variables:
-  - group: 'Agent Authentication'
+  # - group: 'Agent Authentication'
   - name: Image.TaggedName.OSAgnostic
     value: '$(Image.Name):$(Image.Tag)'
   - name: Tags.PR
