@@ -7,7 +7,7 @@ parameters:
 
 steps:
   - task: Docker@2
-    displayName: 'Push ${{ parameters.imageDisplayName }} image to ${{ parameters.registryEndpoint }}'
+    displayName: 'Pushing image ${{ parameters.imageName }}'
     inputs:
       command: 'push'
       repository: '${{ parameters.imageName }}'
