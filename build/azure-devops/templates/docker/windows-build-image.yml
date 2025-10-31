@@ -8,7 +8,7 @@ parameters:
     default: ''
   - name: tags
     type: string
-    default: '--tag promitor-agent-scraper-ci'
+    default: ''
   - name: buildContext
     type: string
     default: './src/'
@@ -17,8 +17,10 @@ steps:
   - task: Docker@2
     displayName: 'Build ${{ parameters.imageName }} image (windows)'
     inputs:
+      containerRegistry: 'GitHub Container Registry'
       command: 'build'
       Dockerfile: ${{ parameters.dockerFile }}
-      arguments: '${{ parameters.tags }} ${{ parameters.buildArgs }} --no-cache'
+      arguments: '${{ parameters.buildArgs }} --no-cache'
       buildContext: ${{ parameters.buildContext }}
+      tags: ${{ parameters.tags }}
       addDefaultLabels: false

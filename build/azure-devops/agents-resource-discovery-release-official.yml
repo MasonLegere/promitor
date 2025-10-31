@@ -33,8 +33,8 @@ variables:
     value: '${{ parameters.imageVersion }}'
   - name: 'Release.Title'
     value: '${{ parameters.githubReleaseTitle }}'
-  - name: 'Image.TaggedName'
-    value: '$(Image.ResourceDiscovery.Name):$(Image.Version)'
+  - name: 'Image.ResourceDiscovery.TaggedName'
+    value: '$(Image.ResourceDiscovery.Full):$(Image.Version)'
   - name: 'Release.TagName'
     value: 'ResourceDiscovery-v$(Build.BuildNumber)'
   # Required for all our build stages

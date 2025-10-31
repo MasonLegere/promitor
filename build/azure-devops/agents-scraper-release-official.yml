@@ -28,10 +28,9 @@ parameters:
 variables:
   - template: ./variables/tests.yml
   - template: ./variables/build.yml
-  - name: 'Image.Name'
-    value: 'ghcr.io/tomkerkhove/promitor-agent-scraper'
-  - name: 'Image.TaggedName'
-    value: '$(Image.Name):$(Image.Version)'
+  - template: ./variables/containers.yml
+  - name: 'Image.Scraper.TaggedName'
+    value: '$(Image.Scraper.Full):$(Image.Version)'
   - name: 'Release.TagName'
     value: 'Scraper-v$(Build.BuildNumber)'
   - name: 'Image.Version'
@@ -74,7 +73,7 @@ stages:
     value: '999'
   - name: Container.Network.Name
     value: 'ci-network'
-  - name: Image.ResourceDiscovery.Name
+  - name: Image.ResourceDiscovery.Local
     value: 'local/promitor-resource-discovery:dev'
   - name: Agent.Scraper.Version
     value: $(Image.Version)
@@ -113,19 +112,19 @@ stages:
        parameters:
         builderName: '$(Docker.Builder.Name)'
         tags: >
-          --tag $(Image.TaggedName)
-          --tag $(Image.TaggedName)-$(OS.Name)
-          --tag $(Image.Name):$(Image.MajorMinorVersion)
-          --tag $(Image.Name):$(Image.MajorMinorVersion)-$(OS.Name)
-          --tag $(Image.Name):latest
-          --tag $(Image.Name):latest-$(OS.Name)
+          --tag $(Image.Scraper.TaggedName)
+          --tag $(Image.Scraper.TaggedName)-$(OS.Name)
+          --tag $(Image.Scraper.Full):$(Image.MajorMinorVersion)
+          --tag $(Image.Scraper.Full):$(Image.MajorMinorVersion)-$(OS.Name)
+          --tag $(Image.Scraper.Full):latest
+          --tag $(Image.Scraper.Full):latest-$(OS.Name)
         dockerFile: './src/Promitor.Agents.Scraper/Dockerfile.$(OS.Name)'
         buildArgs: '--build-arg VERSION="$(Image.Version)"'
      - template: templates/docker/linux-build-image.yml
        parameters:
         builderName: '$(Docker.Builder.Name)'
         tags: >
-          --tag $(Image.ResourceDiscovery.Name):dev
+          --tag $(Image.ResourceDiscovery.Local)
         dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
         buildArgs: '--build-arg VERSION="$(Image.Version)"'
      - template: templates/docker/create-network.yml
@@ -152,7 +151,7 @@ stages:
        parameters:
           containerName: '$(Container.Scraper.Name)'
           containerPort: '$(Container.Scraper.Port)'
-          imageName: '$(Image.Name):$(Image.MajorMinorVersion)'
+          imageName: '$(Image.Scraper.Full):$(Image.MajorMinorVersion)'
           volumes: '$(Pipeline.Workspace)/s/config/promitor/scraper/ci-runtime.yaml:/config/runtime.yaml --volume $(Pipeline.Workspace)/s/config/promitor/scraper/metrics.yaml:/config/metrics-declaration.yaml'
           activeDirectoryAppId: '$(Agent.Scraper.Auth.AppId)'
           activeDirectoryAppSecret: '$(Agent.Scraper.Auth.AppSecret)'
@@ -160,7 +159,7 @@ stages:
           os: '$(OS.Name)'
      - template: templates/agents/run-discovery-image.yml
        parameters:
-          imageName: '$(Image.ResourceDiscovery.Name)'
+          imageName: '$(Image.ResourceDiscovery.Local)'
           containerName: '$(Container.ResourceDiscovery.Name)'
           containerPort: '$(Container.ResourceDiscovery.Port)'
           volumes: '$(Pipeline.Workspace)/s/config/promitor/resource-discovery/ci-runtime.yaml:/config/runtime.yaml --volume $(Pipeline.Workspace)/s/config/promitor/resource-discovery/resource-discovery-declaration.yaml:/config/resource-discovery-declaration.yaml'
@@ -185,13 +184,13 @@ stages:
        parameters:
         builderName: '$(Docker.Builder.Name)'
         tags: >
-          --tag $(Image.TaggedName)
-          --tag $(Image.TaggedName)-$(OS.Name)
+          --tag $(Image.Scraper.TaggedName)
+          --tag $(Image.Scraper.TaggedName)-$(OS.Name)
           ${{ if eq(parameters['releaseType'], 'Full') }}:
-          --tag $(Image.Name):$(Image.MajorMinorVersion)
-          --tag $(Image.Name):$(Image.MajorMinorVersion)-$(OS.Name)
-          --tag $(Image.Name):latest
-          --tag $(Image.Name):latest-$(OS.Name)
+          --tag $(Image.Scraper.Full):$(Image.MajorMinorVersion)
+          --tag $(Image.Scraper.Full):$(Image.MajorMinorVersion)-$(OS.Name)
+          --tag $(Image.Scraper.Full):latest
+          --tag $(Image.Scraper.Full):latest-$(OS.Name)
         dockerFile: './src/Promitor.Agents.Scraper/Dockerfile.$(OS.Name)'
         buildArgs: '--build-arg VERSION="$(Image.Version)"'
    - job: BuildWindows
@@ -214,21 +213,21 @@ stages:
      - template: templates/agents/prepare-discovery-ci-config.yml
      - template: templates/docker/windows-build-image.yml
        parameters:
-        imageName: '$(Image.ResourceDiscovery.Name)'
+        imageName: '$(Image.ResourceDiscovery.Local)'
         dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
         tags: >
-          --tag $(Image.TaggedName)-$(OS.Name)
-          --tag $(Image.ResourceDiscovery.Name):dev
+          --tag $(Image.Scraper.Full):$(Image.Version)-$(OS.Name)
+          --tag $(Image.ResourceDiscovery.Local)
         buildArgs: 'VERSION="$(Image.Version)"'
      - template: templates/docker/windows-build-image.yml
        parameters:
-        imageName: '$(Image.TaggedName)-$(OS.Name)'
+        imageName: '$(Image.Scraper.Full):$(Image.Version)-$(OS.Name)'
         dockerFile: './src/Promitor.Agents.Scraper/Dockerfile.$(OS.Name)'
         buildArgs: 'VERSION="$(Image.Version)"'
         tags: >
-          --tag $(Image.TaggedName)-$(OS.Name)
-          --tag $(Image.Name):$(Image.MajorMinorVersion)-$(OS.Name)
-          --tag $(Image.Name):latest-$(OS.Name)'
+          --tag $(Image.Scraper.Full):$(Image.Version)-$(OS.Name)
+          --tag $(Image.Scraper.Full):$(Image.MajorMinorVersion)-$(OS.Name)
+          --tag $(Image.Scraper.Full):latest-$(OS.Name)'
      - template: templates/docker/create-network.yml
        parameters:
         networkName: '$(Container.Network.Name)'
@@ -249,7 +248,7 @@ stages:
        parameters:
           containerName: '$(Container.Scraper.Name)'
           containerPort: '$(Container.Scraper.Port)'
-          imageName: '$(Image.Name):$(Image.MajorMinorVersion)-$(OS.Name)'
+          imageName: '$(Image.Scraper.Full):$(Image.MajorMinorVersion)-$(OS.Name)'
           volumes: '$(Pipeline.Workspace)\s\config\promitor\scraper\:c:\config\'
           activeDirectoryAppId: '$(Agent.Scraper.Auth.AppId)'
           activeDirectoryAppSecret: '$(Agent.Scraper.Auth.AppSecret)'
@@ -257,7 +256,7 @@ stages:
           os: '$(OS.Name)'
      - template: templates/agents/run-discovery-image.yml
        parameters:
-          imageName: '$(Image.ResourceDiscovery.Name)'
+          imageName: '$(Image.ResourceDiscovery.Local)'
           containerName: '$(Container.ResourceDiscovery.Name)'
           containerPort: '$(Container.ResourceDiscovery.Port)'
           volumes: '$(Pipeline.Workspace)\s\config\promitor\resource-discovery\:c:\config\'
@@ -282,20 +281,20 @@ stages:
      - template: templates/docker/windows-push-image.yml
        parameters:
         imageDisplayName: '''{major}.{minor}.{patch}-$(OS.Name)'''
-        imageName: '$(Image.Name)'
+        imageName: '$(Image.Scraper.Repository)'
         tags: | 
           '$(Image.Version)-$(OS.Name)'
      - ${{ if eq(parameters['releaseType'], 'Full') }}:
         - template: templates/docker/windows-push-image.yml
           parameters:
             imageDisplayName: '''{major}.{minor}-$(OS.Name)'''
-            imageName: '$(Image.Name)'
+            imageName: '$(Image.Scraper.Repository)'
             tags: | 
               '$(Image.MajorMinorVersion)-$(OS.Name)'
         - template: templates/docker/windows-push-image.yml
           parameters:
             imageDisplayName: '''latest-$(OS.Name)'''
-            imageName: '$(Image.Name)'
+            imageName: '$(Image.Scraper.Repository)'
             tags: | 
               'latest-$(OS.Name)'
 - ${{ if eq(parameters['createGitHubRelease'], true) }}:
@@ -339,58 +338,3 @@ stages:
                 - TBW (#) - _Use new approach documented here_
                 ### Getting started
                 Running Promitor Scraper is super easy:
-                ```
-                docker run -d -p 8999:80 --name promitor-agent-scraper
-                                  --env PROMITOR_AUTH_APPID='<azure-ad-app-id>'   \
-                                  --env-file C:/Promitor/az-mon-auth.creds \
-                                  --volume C:/Promitor/metrics-declaration.yaml:/config/metrics-declaration.yaml \
-                                  ghcr.io/tomkerkhove/promitor-agent-scraper:$(Image.Version)
-                ```
-                ### Docker Image information
-                New Docker image tags are available:
-                - `$(Image.Version)`, `$(Image.Version)-linux`, `$(Image.Version)-windows`
-                - `$(Image.MajorMinorVersion)`, `$(Image.MajorMinorVersion)-linux`, `$(Image.MajorMinorVersion)-windows`
-
-                Docker image is available on [GitHub Container Registry](https://github.com/tomkerkhove?tab=packages&repo_name=promitor&ecosystem=container).<br />
-                For more information about our tagging strategy, feel free to read our [documentation](https://docs.promitor.io/deployment/#image-tagging-strategy).
-      - ${{ if eq(parameters['releaseType'], 'Full') }}:
-          - task: GitHubRelease@0
-            displayName: 'Create GitHub Pre-Release'
-            inputs:
-              gitHubConnection: 'Tom Kerkhove (GitHub - OAuth)'
-              repositoryName: tomkerkhove/promitor
-              action: Create
-              tagSource: manual
-              tag: '$(Release.TagName)'
-              title: '$(Release.Title)'
-              releaseNotesSource: input
-              changeLogType: issueBased
-              changeLogCompareToRelease: 'lastFullRelease'
-              isPreRelease: false
-              isDraft: true
-              releaseNotes: |
-                ### What's new?
-                Here are some important things you should know, for a full list see [changelog.promitor.io](https://changelog.promitor.io/).
-                #### Deprecations
-                Here are a list of new deprecations and how to mitigate them:
-                - TBW _(Discussion [#]())_
-                #### Breaking Changes
-                Here are a list of breaking changes and how to mitigate them:
-                - TBW (#) - _Use new approach documented here_
-                ### Getting started
-                Running Promitor Scraper is super easy:
-                ```
-                docker run -d -p 8999:80 --name promitor-agent-scraper
-                                  --env PROMITOR_AUTH_APPID='<azure-ad-app-id>'   \
-                                  --env-file C:/Promitor/az-mon-auth.creds \
-                                  --volume C:/Promitor/metrics-declaration.yaml:/config/metrics-declaration.yaml \
-                                  ghcr.io/tomkerkhove/promitor-agent-scraper:$(Image.Version)
-                ```
-                ### Docker Image information
-                New Docker image tags are available:
-                - `latest`, `latest-linux`, `latest-windows`
-                - `$(Image.Version)`, `$(Image.Version)-linux`, `$(Image.Version)-windows`
-                - `$(Image.MajorMinorVersion)`, `$(Image.MajorMinorVersion)-linux`, `$(Image.MajorMinorVersion)-windows`
-
-                Docker image is available on [GitHub Container Registry](https://github.com/tomkerkhove?tab=packages&repo_name=promitor&ecosystem=container).<br />
-                For more information about our tagging strategy, feel free to read our [documentation](https://docs.promitor.io/deployment/#image-tagging-strategy).
