@@ -91,12 +91,16 @@ stages:
        vmImage: ubuntu-latest
      variables:
        OS.Name: 'linux'
+       Docker.Builder.Name: 'promitor-multiarch'
      steps:
      - download: current
        artifact: variables
      - template: templates/utils/read-variable-on-linux.yml
        parameters:
         variableName: 'Image.MajorMinorVersion'
+     - template: templates/docker/linux-create-builder.yml
+       parameters:
+        builderName: '$(Docker.Builder.Name)'
      - template: templates/build/install-sdk.yml
        parameters:
         dotnetVersion: '$(DotNet.SDK.Version)'
@@ -105,18 +109,25 @@ stages:
        inputs:
         command: test
         projects: src/Promitor.Tests.Unit/Promitor.Tests.Unit.csproj
-     - template: templates/build-scraper-image.yml
+     - template: templates/docker/linux-build-image.yml
        parameters:
-        imageName: '$(Image.TaggedName)'
-        buildArgs: 'VERSION="$(Image.Version)"'
-        tags: '--tag $(Image.Name):latest --tag $(Image.Name):$(Image.MajorMinorVersion) --tag $(Image.TaggedName)-$(OS.Name) --tag $(Image.Name):$(Image.MajorMinorVersion)-$(OS.Name) --tag $(Image.Name):latest-$(OS.Name)'
-        os: '$(OS.Name)'
-     - template: templates/build-discovery-image.yml
+        builderName: '$(Docker.Builder.Name)'
+        tags: >
+          --tag $(Image.TaggedName)
+          --tag $(Image.TaggedName)-$(OS.Name)
+          --tag $(Image.Name):$(Image.MajorMinorVersion)
+          --tag $(Image.Name):$(Image.MajorMinorVersion)-$(OS.Name)
+          --tag $(Image.Name):latest
+          --tag $(Image.Name):latest-$(OS.Name)
+        dockerFile: './src/Promitor.Agents.Scraper/Dockerfile.$(OS.Name)'
+        buildArgs: '--build-arg VERSION="$(Image.Version)"'
+     - template: templates/docker/linux-build-image.yml
        parameters:
-        imageName: '$(Image.ResourceDiscovery.Name)'
-        tags: '--tag dev'
-        buildArgs: 'VERSION="$(Image.Version)"'
-        os: '$(OS.Name)'
+        builderName: '$(Docker.Builder.Name)'
+        tags: >
+          --tag $(Image.ResourceDiscovery.Name):dev
+        dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
+        buildArgs: '--build-arg VERSION="$(Image.Version)"'
      - template: templates/docker/create-network.yml
        parameters:
         networkName: '$(Container.Network.Name)'
@@ -170,31 +181,19 @@ stages:
      - template: templates/docker/show-container-logs.yml
        parameters:
         containerName: '$(Container.ResourceDiscovery.Name)'
-     - template: templates/docker/push-image.yml
+     - template: templates/docker/linux-push-image.yml
        parameters:
-        imageDisplayName: '''{major}.{minor}.{patch}'''
-        imageName: '$(Image.TaggedName)'
-     - template: templates/docker/push-image.yml
-       parameters:
-        imageDisplayName: '''{major}.{minor}.{patch}-$(OS.Name)'''
-        imageName: '$(Image.TaggedName)-$(OS.Name)'
-     - ${{ if eq(parameters['releaseType'], 'Full') }}:
-        - template: templates/docker/push-image.yml
-          parameters:
-            imageDisplayName: '''{major}.{minor}'''
-            imageName: '$(Image.Name):$(Image.MajorMinorVersion)'
-        - template: templates/docker/push-image.yml
-          parameters:
-            imageDisplayName: '''{major}.{minor}-$(OS.Name)'''
-            imageName: '$(Image.Name):$(Image.MajorMinorVersion)-$(OS.Name)'
-        - template: templates/docker/push-image.yml
-          parameters:
-            imageDisplayName: '''latest'''
-            imageName: '$(Image.Name):latest'
-        - template: templates/docker/push-image.yml
-          parameters:
-            imageDisplayName: '''latest-$(OS.Name)'''
-            imageName: '$(Image.Name):latest-$(OS.Name)'
+        builderName: '$(Docker.Builder.Name)'
+        tags: >
+          --tag $(Image.TaggedName)
+          --tag $(Image.TaggedName)-$(OS.Name)
+          ${{ if eq(parameters['releaseType'], 'Full') }}:
+          --tag $(Image.Name):$(Image.MajorMinorVersion)
+          --tag $(Image.Name):$(Image.MajorMinorVersion)-$(OS.Name)
+          --tag $(Image.Name):latest
+          --tag $(Image.Name):latest-$(OS.Name)
+        dockerFile: './src/Promitor.Agents.Scraper/Dockerfile.$(OS.Name)'
+        buildArgs: '--build-arg VERSION="$(Image.Version)"'
    - job: BuildWindows
      displayName: Build Windows Docker image
      pool:
@@ -213,18 +212,18 @@ stages:
         projects: src/Promitor.Tests.Unit/Promitor.Tests.Unit.csproj
      - template: templates/agents/prepare-scraper-ci-config.yml
      - template: templates/agents/prepare-discovery-ci-config.yml
-     - template: templates/build-discovery-image.yml
+     - template: templates/docker/windows-build-image.yml
        parameters:
         imageName: '$(Image.ResourceDiscovery.Name)'
+        dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
         tags: '--tag dev'
         buildArgs: 'VERSION="$(Image.Version)"'
-        os: '$(OS.Name)'
-     - template: templates/build-scraper-image.yml
+     - template: templates/docker/windows-build-image.yml
        parameters:
         imageName: '$(Image.TaggedName)-$(OS.Name)'
+        dockerFile: './src/Promitor.Agents.Scraper/Dockerfile.$(OS.Name)'
         buildArgs: 'VERSION="$(Image.Version)"'
         tags: '--tag $(Image.Name):$(Image.MajorMinorVersion)-$(OS.Name) --tag $(Image.Name):latest-$(OS.Name)'
-        os: '$(OS.Name)'
      - template: templates/docker/create-network.yml
        parameters:
         networkName: '$(Container.Network.Name)'
@@ -275,16 +274,17 @@ stages:
      - template: templates/docker/show-container-logs.yml
        parameters:
         containerName: '$(Container.ResourceDiscovery.Name)'
-     - template: templates/docker/push-image.yml
+     - template: templates/docker/windows-push-image.yml
        parameters:
         imageDisplayName: '''{major}.{minor}.{patch}-$(OS.Name)'''
         imageName: '$(Image.TaggedName)-$(OS.Name)'
+        os: '$(OS.Name)'
      - ${{ if eq(parameters['releaseType'], 'Full') }}:
-        - template: templates/docker/push-image.yml
+        - template: templates/docker/windows-push-image.yml
           parameters:
             imageDisplayName: '''{major}.{minor}-$(OS.Name)'''
             imageName: '$(Image.Name):$(Image.MajorMinorVersion)-$(OS.Name)'
-        - template: templates/docker/push-image.yml
+        - template: templates/docker/windows-push-image.yml
           parameters:
             imageDisplayName: '''latest-$(OS.Name)'''
             imageName: '$(Image.Name):latest-$(OS.Name)'

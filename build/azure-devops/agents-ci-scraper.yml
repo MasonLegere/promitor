@@ -82,32 +82,36 @@ stages:
        Image.TaggedName.OSAgnostic: '$(Image.Name):$(Image.Tag)'
        Tags.Experimental: 'experimental-$(OS.Name)'
        OS.Name: 'linux'
+       Docker.Builder.Name: 'promitor-multiarch'
      steps:
      - download: current
        artifact: variables
      - template: templates/utils/read-variable-on-linux.yml
        parameters:
         variableName: 'Image.Tag'
-     - ${{ if not(eq(variables['Build.Reason'], 'PullRequest')) }}:
-        - template: templates/build-scraper-image.yml
-          parameters:
-             imageName: '$(Image.TaggedName)'
-             tags: '--tag promitor-agent-scraper-ci'
-             buildArgs: 'VERSION="$(App.Version)"'
-             os: '$(OS.Name)'
-     - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-        - template: templates/build-scraper-image.yml
-          parameters:
-             imageName: '$(Image.TaggedName)'
-             tags: '--tag promitor-agent-scraper-ci --tag $(Image.TaggedName.OSAgnostic)'
-             buildArgs: 'VERSION="$(App.Version)"'
-             os: '$(OS.Name)'
-     - template: templates/build-discovery-image.yml
+     - template: templates/docker/linux-create-builder.yml
        parameters:
-          imageName: '$(Image.ResourceDiscovery.Name)'
-          tags: '--tag dev'
-          buildArgs: 'VERSION="$(App.Version)"'
-          os: '$(OS.Name)'
+        builderName: '$(Docker.Builder.Name)'
+     - ${{ if not(eq(variables['Build.Reason'], 'PullRequest')) }}:
+        - template: templates/docker/linux-build-image.yml
+          parameters:
+             builderName: '$(Docker.Builder.Name)'
+             dockerFile: './src/Promitor.Agents.Scraper/Dockerfile.$(OS.Name)'
+             tags: '--tag $(Image.TaggedName) --tag promitor-agent-scraper-ci'
+             buildArgs: '--build-arg VERSION="$(App.Version)"'
+     - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+        - template: templates/docker/linux-build-image.yml
+          parameters:
+             builderName: '$(Docker.Builder.Name)'
+             dockerFile: './src/Promitor.Agents.Scraper/Dockerfile.$(OS.Name)'
+             tags: '--tag $(Image.TaggedName) --tag promitor-agent-scraper-ci --tag $(Image.TaggedName.OSAgnostic)'
+             buildArgs: '--build-arg VERSION="$(App.Version)"'
+     - template: templates/docker/linux-build-image.yml
+       parameters:
+          builderName: '$(Docker.Builder.Name)'
+          dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
+          tags: '--tag $(Image.ResourceDiscovery.Name)'
+          buildArgs: '--build-arg VERSION="$(App.Version)"'
      - template: templates/docker/create-network.yml
        parameters:
         networkName: '$(Container.Network.Name)'
@@ -174,12 +178,15 @@ stages:
         agentName: 'OpenTelemetry'
         url: '$(OpenTelemetry.Collector.Uri)/$(Agent.OpenTelemetry.Prometheus.ScrapeUri)'
      - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-        - template: templates/docker/push-image.yml
+        - template: templates/docker/linux-push-image.yml
           parameters:
-              imageName: '$(Image.TaggedName)'
-        - template: templates/docker/push-image.yml
-          parameters:
-              imageName: '$(Image.TaggedName.OSAgnostic)'
+              builderName: '$(Docker.Builder.Name)'
+              dockerFile: './src/Promitor.Agents.Scraper/Dockerfile.$(OS.Name)'
+              buildArgs: '--build-arg VERSION="$(App.Version)"'
+              tags: >
+                --tag $(Image.TaggedName)
+                --tag $(Image.TaggedName.OSAgnostic)
+                --tag promitor-agent-scraper-ci
    - job: DockerBuildWindows
      displayName: Build Docker Image (Windows)
      condition: succeeded()
@@ -197,26 +204,26 @@ stages:
      - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
         - template: templates/versioning/determine-pr-version.yml
      - ${{ if not(eq(variables['Build.Reason'], 'PullRequest')) }}:
-        - template: templates/build-scraper-image.yml
+        - template: templates/docker/windows-build-image.yml
           parameters:
              imageName: '$(Image.TaggedName)'
-             buildArgs: 'VERSION="$(App.Version)"'
+             dockerFile: './src/Promitor.Agents.Scraper/Dockerfile.$(OS.Name)'
              tags: '--tag promitor-agent-scraper-ci --tag promitor-agent-scraper-ci-non-pr'
-             os: '$(OS.Name)'
+             buildArgs: '--build-arg VERSION="$(App.Version)"'
      - template: templates/agents/prepare-scraper-ci-config.yml
      - template: templates/agents/prepare-discovery-ci-config.yml
-     - template: templates/build-discovery-image.yml
+     - template: templates/docker/windows-build-image.yml
        parameters:
           imageName: '$(Image.ResourceDiscovery.Name)'
+          dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
           tags: '--tag dev'
-          buildArgs: 'VERSION="$(App.Version)"'
-          os: '$(OS.Name)'
-     - template: templates/build-scraper-image.yml
+          buildArgs: '--build-arg VERSION="$(App.Version)"'
+     - template: templates/docker/windows-build-image.yml
        parameters:
           imageName: '$(Image.TaggedName)'
-          buildArgs: 'VERSION="$(App.Version)"'
+          dockerFile: './src/Promitor.Agents.Scraper/Dockerfile.$(OS.Name)'
+          buildArgs: '--build-arg VERSION="$(App.Version)"'
           tags: '--tag promitor-agent-scraper-ci'
-          os: '$(OS.Name)'
      - template: templates/docker/create-network.yml
        parameters:
         networkName: '$(Container.Network.Name)'
@@ -275,6 +282,6 @@ stages:
        parameters:
         containerName: '$(Container.ResourceDiscovery.Name)'
      - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-        - template: templates/docker/push-image.yml
+        - template: templates/docker/windows-push-image.yml
           parameters:
               imageName: '$(Image.TaggedName)'
