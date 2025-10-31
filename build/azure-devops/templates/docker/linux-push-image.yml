@@ -20,7 +20,16 @@ steps:
       command: login
       containerRegistry: 'GitHub Container Registry'
 
-  - bash: |      
+  - bash: |
+      set -euo pipefail
+
+      # Ensure builder is available
+      docker buildx inspect $BUILDER_NAME --bootstrap || {
+        echo "Builder $BUILDER_NAME not available, recreating..."
+        docker run --privileged --rm tonistiigi/binfmt --install arm64
+        docker buildx create --name $BUILDER_NAME --driver docker-container --use --bootstrap
+      }
+
       # Build and push with cache enabled to reuse builds if available
       docker buildx build \
         --builder $BUILDER_NAME \

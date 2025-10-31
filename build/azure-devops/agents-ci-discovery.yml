@@ -192,4 +192,5 @@ stages:
      - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
         - template: templates/docker/windows-push-image.yml
           parameters:
-              imageName: '$(Image.TaggedName)'
+              repository: '$(Image.TaggedName)'
+              tags: '$(Tags.PR)'

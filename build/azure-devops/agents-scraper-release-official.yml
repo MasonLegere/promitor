@@ -282,17 +282,22 @@ stages:
      - template: templates/docker/windows-push-image.yml
        parameters:
         imageDisplayName: '''{major}.{minor}.{patch}-$(OS.Name)'''
-        imageName: '$(Image.TaggedName)-$(OS.Name)'
-        os: '$(OS.Name)'
+        imageName: '$(Image.Name)'
+        tags: | 
+          '$(Image.Version)-$(OS.Name)'
      - ${{ if eq(parameters['releaseType'], 'Full') }}:
         - template: templates/docker/windows-push-image.yml
           parameters:
             imageDisplayName: '''{major}.{minor}-$(OS.Name)'''
-            imageName: '$(Image.Name):$(Image.MajorMinorVersion)-$(OS.Name)'
+            imageName: '$(Image.Name)'
+            tags: | 
+              '$(Image.MajorMinorVersion)-$(OS.Name)'
         - template: templates/docker/windows-push-image.yml
           parameters:
             imageDisplayName: '''latest-$(OS.Name)'''
-            imageName: '$(Image.Name):latest-$(OS.Name)'
+            imageName: '$(Image.Name)'
+            tags: | 
+              'latest-$(OS.Name)'
 - ${{ if eq(parameters['createGitHubRelease'], true) }}:
   - stage: ReleaseGitHub
     displayName: Release on GitHub

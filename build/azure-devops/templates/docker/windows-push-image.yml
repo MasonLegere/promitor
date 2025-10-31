@@ -6,14 +6,11 @@ parameters:
     type: string
 
 steps:
-  - task: Docker@2
-    displayName: 'Login to GitHub Container Registry'
-    inputs:
-      command: login
-      containerRegistry: 'GitHub Container Registry'
 
   - task: Docker@2
     displayName: 'Pushing image ${{ parameters.imageDisplayName }}'
     inputs:
+      containerRegistry: 'GitHub Container Registry'
       command: 'push'
       repository: '${{ parameters.imageName }}'
+      tags: '${{ parameters.tags }}'
