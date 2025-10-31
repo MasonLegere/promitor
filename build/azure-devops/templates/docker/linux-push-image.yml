@@ -1,4 +1,6 @@
 parameters:
+  - name: builderName
+    type: string
   - name: tags
     type: string
   - name: dockerFile
@@ -12,16 +14,10 @@ parameters:
 
 steps:
       
-  - bash: |
-      set -euo pipefail
-      
-      # Setup buildx if not exists
-      docker run --privileged --rm tonistiigi/binfmt --install arm64
-      docker buildx create --name promitor-multiarch --driver docker-container --use --bootstrap 2>/dev/null || docker buildx use promitor-multiarch
-      
+  - bash: |      
       # Build and push with cache enabled to reuse builds if available
       docker buildx build \
-        --builder promitor-multiarch \
+        --builder $BUILDER_NAME \
         --platform linux/amd64,linux/arm64 \
         $TAGS \
         $BUILD_ARGS \
@@ -34,4 +30,5 @@ steps:
       BUILD_ARGS: ${{ parameters.buildArgs }}
       DOCKERFILE: ${{ parameters.dockerFile }}
       BUILD_CONTEXT: ${{ parameters.buildContext }}
+      BUILDER_NAME: ${{ parameters.builderName }}
     displayName: 'Build and push multi-platform images (linux/amd64,linux/arm64)'

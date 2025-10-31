@@ -82,6 +82,8 @@ stages:
   variables:
   - name: OS.Name
     value: 'linux'
+  - name: Docker.Builder.Name
+    value: 'promitor-multiarch'
   jobs:
    - job: BuildLinux
      displayName: Build Linux Docker image
@@ -91,6 +93,9 @@ stages:
      - template: templates/utils/read-variable-on-linux.yml
        parameters:
         variableName: 'Image.MajorMinorVersion'
+     - template: templates/docker/linux-create-builder.yml
+       parameters:
+        builderName: '$(Docker.Builder.Name)'
      - template: templates/build/install-sdk.yml
        parameters:
         dotnetVersion: '$(DotNet.SDK.Version)'
@@ -101,6 +106,7 @@ stages:
         projects: src/Promitor.Tests.Unit/Promitor.Tests.Unit.csproj
      - template: templates/docker/linux-build-image.yml
        parameters:
+        builderName: '$(Docker.Builder.Name)'
         tags: >
           --tag $(Image.TaggedName)
           --tag $(Image.TaggedName)-$(OS.Name)
@@ -131,7 +137,7 @@ stages:
         containerName: '$(Container.ResourceDiscovery.Name)'
      - template: templates/docker/linux-push-image.yml
        parameters:
-        registryEndpoint: 'GitHub Container Registry'
+        builderName: '$(Docker.Builder.Name)'
         tags: >
           --tag $(Image.TaggedName)
           --tag $(Image.TaggedName)-$(OS.Name)

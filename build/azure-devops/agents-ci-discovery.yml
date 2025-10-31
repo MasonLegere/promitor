@@ -17,7 +17,7 @@ variables:
   - template: ./variables/build.yml
   - template: ./variables/tests.yml
   - name: Image.Name
-    value: 'ghcr.io/masonlegere/promitor-agent-resource-discovery-ci'
+    value: 'ghcr.io/tomkerkhove/promitor-agent-resource-discovery-ci'
   - name: Image.TaggedName
     value: '$(Image.Name):$(Tags.PR)'
   - name: Container.Name
@@ -73,21 +73,27 @@ stages:
      variables:
        Tags.Experimental: 'experimental-$(OS.Name)'
        OS.Name: 'linux'
+       Docker.Builder.Name: 'promitor-multiarch'
      steps:
      - download: current
        artifact: variables
      - template: templates/utils/read-variable-on-linux.yml
        parameters:
         variableName: 'Image.Tag'
+     - template: templates/docker/linux-create-builder.yml
+       parameters:
+        builderName: '$(Docker.Builder.Name)'
      - ${{ if not(eq(variables['Build.Reason'], 'PullRequest')) }}:
         - template: templates/docker/linux-build-image.yml
           parameters:
+             builderName: '$(Docker.Builder.Name)'
              dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
              tags: '--tag $(Image.TaggedName) --tag promitor-agent-resource-discovery-ci'
              buildArgs: '--build-arg VERSION="$(App.Version)"'
      - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
         - template: templates/docker/linux-build-image.yml
           parameters:
+             builderName: '$(Docker.Builder.Name)'
              dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
              tags: '--tag $(Image.TaggedName) --tag promitor-agent-resource-discovery-ci --tag $(Image.TaggedName.OSAgnostic)'
              buildArgs: '--build-arg VERSION="$(App.Version)"'
@@ -117,6 +123,7 @@ stages:
      - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
         - template: templates/docker/linux-push-image.yml
           parameters:
+              builderName: '$(Docker.Builder.Name)'
               dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
               tags: >
                 --tag $(Image.TaggedName)

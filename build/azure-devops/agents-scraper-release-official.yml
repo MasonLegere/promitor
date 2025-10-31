@@ -91,12 +91,16 @@ stages:
        vmImage: ubuntu-latest
      variables:
        OS.Name: 'linux'
+       Docker.Builder.Name: 'promitor-multiarch'
      steps:
      - download: current
        artifact: variables
      - template: templates/utils/read-variable-on-linux.yml
        parameters:
         variableName: 'Image.MajorMinorVersion'
+     - template: templates/docker/linux-create-builder.yml
+       parameters:
+        builderName: '$(Docker.Builder.Name)'
      - template: templates/build/install-sdk.yml
        parameters:
         dotnetVersion: '$(DotNet.SDK.Version)'
@@ -107,6 +111,7 @@ stages:
         projects: src/Promitor.Tests.Unit/Promitor.Tests.Unit.csproj
      - template: templates/docker/linux-build-image.yml
        parameters:
+        builderName: '$(Docker.Builder.Name)'
         tags: >
           --tag $(Image.TaggedName)
           --tag $(Image.TaggedName)-$(OS.Name)
@@ -118,6 +123,7 @@ stages:
         buildArgs: '--build-arg VERSION="$(Image.Version)"'
      - template: templates/docker/linux-build-image.yml
        parameters:
+        builderName: '$(Docker.Builder.Name)'
         tags: >
           --tag $(Image.ResourceDiscovery.Name):dev
         dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
@@ -177,7 +183,7 @@ stages:
         containerName: '$(Container.ResourceDiscovery.Name)'
      - template: templates/docker/linux-push-image.yml
        parameters:
-        registryEndpoint: 'GitHub Container Registry'
+        builderName: '$(Docker.Builder.Name)'
         tags: >
           --tag $(Image.TaggedName)
           --tag $(Image.TaggedName)-$(OS.Name)
