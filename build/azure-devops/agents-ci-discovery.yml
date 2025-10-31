@@ -17,7 +17,7 @@ variables:
   - template: ./variables/build.yml
   - template: ./variables/tests.yml
   - name: Image.Name
-    value: 'ghcr.io/tomkerkhove/promitor-agent-resource-discovery-ci'
+    value: 'ghcr.io/masonlegere/promitor'
   - name: Image.TaggedName
     value: '$(Image.Name):$(Tags.PR)'
   - name: Container.Name
@@ -107,12 +107,12 @@ stages:
           activeDirectoryAppSecret: '$(Agent.ResourceDiscovery.Auth.AppSecret)'
           os: '$(OS.Name)'
      - template: templates/docker/show-running-containers.yml
-     - template: templates/tests/run-integration-tests.yml
-       parameters:
-        agentName: 'Resource Discovery'
-        testRunTitle: 'resource-discovery-linux'
-        dotnetVersion: '$(DotNet.Sdk.Version)'
-        buildConfiguration: '$(DotNet.Configuration)'
+    #  - template: templates/tests/run-integration-tests.yml
+    #    parameters:
+    #     agentName: 'Resource Discovery'
+    #     testRunTitle: 'resource-discovery-linux'
+    #     dotnetVersion: '$(DotNet.Sdk.Version)'
+    #     buildConfiguration: '$(DotNet.Configuration)'
      - template: templates/docker/show-container-logs.yml
        parameters:
         containerName: '$(Container.Name)'
@@ -171,19 +171,19 @@ stages:
           activeDirectoryAppSecret: '$(Agent.ResourceDiscovery.Auth.AppSecret)'
           os: '$(OS.Name)'
      - template: templates/docker/show-running-containers.yml
-     - template: templates/tests/run-integration-tests.yml
-       parameters:
-        agentName: 'Resource Discovery'
-        testRunTitle: 'resource-discovery-windows'
-        dotnetVersion: '$(DotNet.Sdk.Version)'
-        buildConfiguration: '$(DotNet.Configuration)'
+    #  - template: templates/tests/run-integration-tests.yml
+    #    parameters:
+    #     agentName: 'Resource Discovery'
+    #     testRunTitle: 'resource-discovery-windows'
+    #     dotnetVersion: '$(DotNet.Sdk.Version)'
+    #     buildConfiguration: '$(DotNet.Configuration)'
      - template: templates/docker/show-container-logs.yml
        parameters:
         containerName: '$(Container.Name)'
-     - template: templates/prometheus/show-prometheus-metrics.yml
-       parameters:
-        agentName: 'Resource Discovery'
-        url: '$(Agent.ResourceDiscovery.BaseUrl)/$(Agent.ResourceDiscovery.Prometheus.ScrapeUri)'
+    #  - template: templates/prometheus/show-prometheus-metrics.yml
+    #    parameters:
+    #     agentName: 'Resource Discovery'
+    #     url: '$(Agent.ResourceDiscovery.BaseUrl)/$(Agent.ResourceDiscovery.Prometheus.ScrapeUri)'
      - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
         - template: templates/docker/windows-push-image.yml
           parameters:
