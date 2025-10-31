@@ -1,7 +1,4 @@
 parameters:
-  - name: registryEndpoint
-    type: string
-    default: 'GitHub Container Registry'
   - name: tags
     type: string
   - name: dockerFile
@@ -14,11 +11,6 @@ parameters:
     default: './src/'
 
 steps:
-  - task: Docker@2
-    displayName: 'Docker login to ${{ parameters.registryEndpoint }}'
-    inputs:
-      containerRegistry: '${{ parameters.registryEndpoint }}'
-      command: 'login'
       
   - bash: |
       set -euo pipefail
