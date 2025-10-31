@@ -4,6 +4,8 @@ parameters:
     default: ''
   - name: imageName
     type: string
+  - name: tags
+    type: string
 
 steps:
 
