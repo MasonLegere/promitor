@@ -21,5 +21,4 @@ steps:
       Dockerfile: ${{ parameters.dockerFile }}
       arguments: '${{ parameters.tags }} ${{ parameters.buildArgs }} --no-cache'
       buildContext: ${{ parameters.buildContext }}
-      repository: '${{ parameters.imageName }}'
       addDefaultLabels: false
