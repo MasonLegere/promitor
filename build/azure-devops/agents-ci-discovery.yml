@@ -128,7 +128,6 @@ stages:
               tags: >
                 --tag $(Image.TaggedName)
                 --tag $(Image.TaggedName.OSAgnostic)
-                --tag promitor-agent-resource-discovery-ci
               buildArgs: '--build-arg VERSION="$(App.Version)"'
    - job: DockerBuildWindows
      displayName: Build Docker Image (Windows)

@@ -186,7 +186,6 @@ stages:
               tags: >
                 --tag $(Image.TaggedName)
                 --tag $(Image.TaggedName.OSAgnostic)
-                --tag promitor-agent-scraper-ci
    - job: DockerBuildWindows
      displayName: Build Docker Image (Windows)
      condition: succeeded()
