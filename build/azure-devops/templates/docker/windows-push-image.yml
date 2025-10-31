@@ -1,15 +1,17 @@
 parameters:
-  - name: imageName
+  - name: registryEndpoint
     type: string
-  - name: tags
+    default: 'GitHub Container Registry'
+  - name: imageDisplayName
     type: string
     default: ''
+  - name: imageName
+    type: string
 
 steps:
-  - task: Docker@1
-    displayName: 'Push ${{ parameters.imageName }} image (windows)'
+  - task: Docker@2
+    displayName: 'Push ${{ parameters.imageDisplayName }} image to ${{ parameters.registryEndpoint }}'
     inputs:
-      containerregistrytype: 'Container Registry'
-      dockerRegistryEndpoint: 'Docker Hub'
-      command: 'Push an image'
-      imageName: '${{ parameters.imageName }}'
+      containerRegistry: '${{ parameters.registryEndpoint }}'
+      command: 'push'
+      repository: '${{ parameters.imageName }}'

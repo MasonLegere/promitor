@@ -1,46 +1,45 @@
 parameters:
-  - name: imageName
+  - name: registryEndpoint
+    type: string
+    default: 'GitHub Container Registry'
+  - name: tags
     type: string
   - name: dockerFile
     type: string
   - name: buildArgs
     type: string
     default: ''
-  - name: tags
-    type: string
-    default: '--tag promitor-agent-scraper-ci'
   - name: buildContext
     type: string
     default: './src/'
 
 steps:
+  - task: Docker@2
+    displayName: 'Docker login to ${{ parameters.registryEndpoint }}'
+    inputs:
+      containerRegistry: '${{ parameters.registryEndpoint }}'
+      command: 'login'
+      
   - bash: |
       set -euo pipefail
-      TAG_ARGS=''
-      if [ -n "$TAGS" ]; then
-        TAG_ARGS="$TAGS"
-      fi
-      BUILD_ARG_FLAGS=''
-      if [ -n "$BUILD_ARGS" ]; then
-        for arg in $BUILD_ARGS; do
-          BUILD_ARG_FLAGS="$BUILD_ARG_FLAGS --build-arg $arg"
-        done
-      fi
       
-      # Push both amd64 and arm64 from cache
+      # Setup buildx if not exists
+      docker run --privileged --rm tonistiigi/binfmt --install arm64
+      docker buildx create --name promitor-multiarch --driver docker-container --use --bootstrap 2>/dev/null || docker buildx use promitor-multiarch
+      
+      # Build and push with cache enabled to reuse builds if available
       docker buildx build \
         --builder promitor-multiarch \
         --platform linux/amd64,linux/arm64 \
-        --tag "$IMAGE_NAME" \
-        $TAG_ARGS \
-        $BUILD_ARG_FLAGS \
+        $TAGS \
+        $BUILD_ARGS \
         --file "$DOCKERFILE" \
         --push \
         "$BUILD_CONTEXT"
+
     env:
-      IMAGE_NAME: ${{ parameters.imageName }}
       TAGS: ${{ parameters.tags }}
       BUILD_ARGS: ${{ parameters.buildArgs }}
       DOCKERFILE: ${{ parameters.dockerFile }}
       BUILD_CONTEXT: ${{ parameters.buildContext }}
-    displayName: 'Push ${{ parameters.imageName }} multi-platform images (linux/amd64,linux/arm64)'
+    displayName: 'Build and push multi-platform images (linux/amd64,linux/arm64)'

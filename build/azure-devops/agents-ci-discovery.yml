@@ -82,17 +82,15 @@ stages:
      - ${{ if not(eq(variables['Build.Reason'], 'PullRequest')) }}:
         - template: templates/docker/linux-build-image.yml
           parameters:
-             imageName: '$(Image.TaggedName)'
              dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
-             tags: '--tag promitor-agent-resource-discovery-ci'
-             buildArgs: 'VERSION="$(App.Version)"'
+             tags: '--tag $(Image.TaggedName) --tag promitor-agent-resource-discovery-ci'
+             buildArgs: '--build-arg VERSION="$(App.Version)"'
      - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
         - template: templates/docker/linux-build-image.yml
           parameters:
-             imageName: '$(Image.TaggedName)'
              dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
-             tags: '--tag promitor-agent-resource-discovery-ci --tag $(Image.TaggedName.OSAgnostic)'
-             buildArgs: 'VERSION="$(App.Version)"'
+             tags: '--tag $(Image.TaggedName) --tag promitor-agent-resource-discovery-ci --tag $(Image.TaggedName.OSAgnostic)'
+             buildArgs: '--build-arg VERSION="$(App.Version)"'
      - template: templates/agents/run-discovery-image.yml
        parameters:
           imageName: '$(Image.TaggedName)'
@@ -119,16 +117,12 @@ stages:
      - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
         - template: templates/docker/linux-push-image.yml
           parameters:
-              imageName: '$(Image.TaggedName)'
               dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
-              tags: '--tag promitor-agent-resource-discovery-ci --tag $(Image.TaggedName.OSAgnostic)'
-              buildArgs: 'VERSION="$(App.Version)"'
-        - template: templates/docker/linux-push-image.yml
-          parameters:
-              imageName: '$(Image.TaggedName.OSAgnostic)'
-              dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
-              tags: '--tag promitor-agent-resource-discovery-ci --tag $(Image.TaggedName.OSAgnostic)'
-              buildArgs: 'VERSION="$(App.Version)"'
+              tags: >
+                --tag $(Image.TaggedName)
+                --tag $(Image.TaggedName.OSAgnostic)
+                --tag promitor-agent-resource-discovery-ci
+              buildArgs: '--build-arg VERSION="$(App.Version)"'
    - job: DockerBuildWindows
      displayName: Build Docker Image (Windows)
      condition: succeeded()
@@ -151,7 +145,7 @@ stages:
           parameters:
              imageName: '$(Image.TaggedName)'
              dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
-             buildArgs: 'VERSION="$(App.Version)"'
+             buildArgs: '--build-arg VERSION="$(App.Version)"'
              tags: '--tag promitor-agent-resource-discovery-ci'
      - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
         - template: templates/docker/windows-build-image.yml
@@ -159,7 +153,7 @@ stages:
              imageName: '$(Image.TaggedName)'
              dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
              tags: '--tag promitor-agent-resource-discovery-ci --tag $(Image.TaggedName.OSAgnostic)'
-             buildArgs: 'VERSION="$(App.Version)"'
+             buildArgs: '--build-arg VERSION="$(App.Version)"'
      - template: templates/agents/run-discovery-image.yml
        parameters:
           imageName: '$(Image.TaggedName)'
@@ -184,7 +178,6 @@ stages:
         agentName: 'Resource Discovery'
         url: '$(Agent.ResourceDiscovery.BaseUrl)/$(Agent.ResourceDiscovery.Prometheus.ScrapeUri)'
      - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-        - template: templates/docker/push-image.yml
+        - template: templates/docker/windows-push-image.yml
           parameters:
               imageName: '$(Image.TaggedName)'
-              os: '$(OS.Name)'
