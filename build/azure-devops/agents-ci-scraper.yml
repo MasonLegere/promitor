@@ -208,22 +208,27 @@ stages:
           parameters:
              imageName: '$(Image.TaggedName)'
              dockerFile: './src/Promitor.Agents.Scraper/Dockerfile.$(OS.Name)'
-             tags: '--tag promitor-agent-scraper-ci --tag promitor-agent-scraper-ci-non-pr'
+             tags: >
+               --tag $(Image.TaggedName)
+               --tag promitor-agent-scraper-ci
+               --tag promitor-agent-scraper-ci-non-pr
              buildArgs: '--build-arg VERSION="$(App.Version)"'
      - template: templates/agents/prepare-scraper-ci-config.yml
      - template: templates/agents/prepare-discovery-ci-config.yml
      - template: templates/docker/windows-build-image.yml
        parameters:
-          imageName: '$(Image.ResourceDiscovery.Name)'
+          imageName: 'local/promitor-resource-discovery'
           dockerFile: './src/Promitor.Agents.ResourceDiscovery/Dockerfile.$(OS.Name)'
-          tags: '--tag dev'
+          tags: '--tag $(Image.ResourceDiscovery.Name)'
           buildArgs: '--build-arg VERSION="$(App.Version)"'
      - template: templates/docker/windows-build-image.yml
        parameters:
           imageName: '$(Image.TaggedName)'
           dockerFile: './src/Promitor.Agents.Scraper/Dockerfile.$(OS.Name)'
           buildArgs: '--build-arg VERSION="$(App.Version)"'
-          tags: '--tag promitor-agent-scraper-ci'
+          tags: >
+            --tag $(Image.TaggedName)
+            --tag promitor-agent-scraper-ci
      - template: templates/docker/create-network.yml
        parameters:
         networkName: '$(Container.Network.Name)'
